@@ -1,23 +1,574 @@
-PIPELINE ACTIF
-Image Processor
-Traitement automatique · EXIF iPhone · Bruit CMOS · GPS Paris 
-Dépose tes images ici
-PNG · JPEG · Illimité
-SÉLECTIONNE DES IMAGES
-0
-IMAGES
--85%
-DE RISQUE DE DÉTECTION
-5
-TRAITEMENTS
-CE QUE LE PIPELINE APPLIQUE
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumio — Vinted</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal: #1d7a72;
+    --teal-light: #2a9d8f;
+    --teal-pale: #e8f5f4;
+    --teal-mid: #c2e6e3;
+    --bg: #f4fafa;
+    --white: #ffffff;
+    --text: #1a2e2d;
+    --muted: #5a7a78;
+    --border: #d0e8e6;
+    --accent: #ff6b35;
+  }
 
-Black point lift — supprime le noir absolu
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-Bruit Poisson CMOS — signature capteur réelle
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+  }
 
-Micro-rotation — casse le hash perceptuel
+  /* top bar */
+  .topbar {
+    background: var(--teal);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 
-Double compression JPEG — pipeline ISP iPhone
+  .logo {
+    font-size: 20px;
+    font-weight: 900;
+    color: white;
+    letter-spacing: -0.5px;
+  }
 
-EXIF iPhone 15 Pro + GPS Paris injectés 
+  .logo span {
+    background: white;
+    color: var(--teal);
+    border-radius: 6px;
+    padding: 1px 7px;
+    margin-right: 4px;
+    font-size: 18px;
+  }
+
+  .online-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.9);
+    font-weight: 600;
+  }
+
+  .online-dot {
+    width: 6px;
+    height: 6px;
+    background: #4ade80;
+    border-radius: 50%;
+    animation: blink 2s infinite;
+  }
+
+  @keyframes blink {
+    0%,100% { opacity:1; }
+    50% { opacity:0.3; }
+  }
+
+  .container { max-width: 480px; margin: 0 auto; padding: 24px 16px 60px; }
+
+  /* hero card */
+  .hero-card {
+    background: var(--teal);
+    border-radius: 20px;
+    padding: 28px 24px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-card::before {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 160px;
+    height: 160px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+  }
+
+  .hero-card::after {
+    content: '';
+    position: absolute;
+    bottom: -60px;
+    right: 30px;
+    width: 200px;
+    height: 200px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+  }
+
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.9);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .hero-title {
+    font-size: clamp(22px, 6vw, 28px);
+    font-weight: 900;
+    color: white;
+    line-height: 1.2;
+    margin-bottom: 10px;
+  }
+
+  .hero-title em {
+    font-style: normal;
+    background: rgba(255,255,255,0.2);
+    border-radius: 6px;
+    padding: 0 6px;
+  }
+
+  .hero-sub {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.6;
+    font-weight: 400;
+    max-width: 300px;
+  }
+
+  /* stats row */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .stat {
+    background: var(--white);
+    border-radius: 14px;
+    padding: 16px 10px;
+    text-align: center;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(29,122,114,0.06);
+  }
+
+  .stat-val {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--teal);
+    display: block;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  /* upload */
+  .upload-card {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 12px rgba(29,122,114,0.06);
+  }
+
+  .upload-label {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .drop-zone {
+    border: 2px dashed var(--teal-mid);
+    border-radius: 14px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    background: var(--teal-pale);
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--teal);
+    background: #d4efed;
+  }
+
+  input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .drop-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+  }
+
+  .drop-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--teal);
+    margin-bottom: 4px;
+  }
+
+  .drop-sub {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .file-selected {
+    display: none;
+    font-size: 12px;
+    color: var(--teal);
+    font-weight: 700;
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  /* CTA */
+  .cta {
+    width: 100%;
+    padding: 18px;
+    background: var(--teal);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+    font-family: 'Nunito', sans-serif;
+    transition: background 0.2s, transform 0.15s;
+    margin-bottom: 20px;
+    letter-spacing: 0.3px;
+  }
+
+  .cta:hover:not(:disabled) {
+    background: var(--teal-light);
+    transform: translateY(-1px);
+  }
+
+  .cta:disabled {
+    background: var(--teal-mid);
+    color: rgba(255,255,255,0.6);
+    cursor: not-allowed;
+  }
+
+  /* progress */
+  .progress-wrap { display: none; margin-bottom: 16px; }
+
+  .progress-track {
+    height: 6px;
+    background: var(--teal-pale);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--teal);
+    width: 0%;
+    transition: width 0.3s;
+    border-radius: 6px;
+  }
+
+  .progress-label {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-top: 6px;
+    text-align: center;
+  }
+
+  /* msg */
+  .msg {
+    display: none;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    padding: 14px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+
+  .msg.error { background: #fff0ee; color: #e05a3a; border: 1px solid #ffd0c4; }
+  .msg.success { background: var(--teal-pale); color: var(--teal); border: 1px solid var(--teal-mid); }
+
+  /* features */
+  .features-card {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 12px rgba(29,122,114,0.06);
+  }
+
+  .features-title {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .features { display: flex; flex-direction: column; gap: 14px; }
+
+  .feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .feature-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--teal-pale);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .feature-text strong {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text);
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .feature-text span {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 400;
+    line-height: 1.4;
+  }
+
+  .footer {
+    text-align: center;
+    margin-top: 32px;
+    font-size: 11px;
+    color: #b0c8c6;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><span>L</span>Lumio</div>
+  <div class="online-badge">
+    <div class="online-dot"></div>
+    En ligne
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="hero-card">
+    <div class="hero-tag">🛡️ Protection compte Vinted</div>
+    <h1 class="hero-title">Fini les annonces<br>supprimées et les<br><em>comptes restreints.</em></h1>
+    <p class="hero-sub">Tes photos ressortent comme prises avec un vrai iPhone. Aucune restriction, aucune suppression.</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <span class="stat-val" id="imgCount">0</span>
+      <span class="stat-label">Photos traitées</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val">-85%</span>
+      <span class="stat-label">Risque de restriction</span>
+    </div>
+    <div class="stat">
+      <span class="stat-val">∞</span>
+      <span class="stat-label">Illimité</span>
+    </div>
+  </div>
+
+  <div class="upload-card">
+    <div class="upload-label">📸 Tes photos</div>
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" multiple accept="image/png,image/jpeg">
+      <div class="drop-icon">⬆️</div>
+      <div class="drop-title">Dépose tes images ici</div>
+      <div class="drop-sub">PNG · JPEG · Plusieurs fichiers à la fois</div>
+    </div>
+    <div class="file-selected" id="fileSelected"></div>
+  </div>
+
+  <div class="msg" id="msg"></div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-label" id="progressLabel">Traitement en cours…</div>
+  </div>
+
+  <button class="cta" id="processBtn" disabled>Choisir des images</button>
+
+  <div class="features-card">
+    <div class="features-title">Ce qui change concrètement</div>
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">📱</div>
+        <div class="feature-text">
+          <strong>Reconnue comme photo iPhone</strong>
+          <span>Métadonnées authentiques d'un vrai appareil photo mobile, date et lieu cohérents.</span>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🛡️</div>
+        <div class="feature-text">
+          <strong>Annonces qui restent en ligne</strong>
+          <span>Tes photos ne déclenchent plus les filtres automatiques de Vinted.</span>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-text">
+          <strong>Batch illimité, prêt en secondes</strong>
+          <span>1 photo ou 100 à la fois — ZIP téléchargeable immédiatement.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Lumio · Usage personnel</div>
+
+</div>
+
+<script>
+  const fileInput    = document.getElementById('fileInput');
+  const dropZone     = document.getElementById('dropZone');
+  const processBtn   = document.getElementById('processBtn');
+  const imgCount     = document.getElementById('imgCount');
+  const fileSelected = document.getElementById('fileSelected');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressFill = document.getElementById('progressFill');
+  const progressLabel= document.getElementById('progressLabel');
+  const msg          = document.getElementById('msg');
+
+  let selectedFiles = [];
+
+  fileInput.addEventListener('change', () => {
+    selectedFiles = Array.from(fileInput.files);
+    updateUI();
+  });
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    selectedFiles = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    updateUI();
+  });
+
+  function updateUI() {
+    const n = selectedFiles.length;
+    imgCount.textContent = n;
+    if (n > 0) {
+      processBtn.disabled = false;
+      processBtn.textContent = `Traiter ${n} image${n > 1 ? 's' : ''} →`;
+      fileSelected.style.display = 'block';
+      fileSelected.textContent = `✓ ${n} fichier${n > 1 ? 's' : ''} sélectionné${n > 1 ? 's' : ''}`;
+    } else {
+      processBtn.disabled = true;
+      processBtn.textContent = 'Choisir des images';
+      fileSelected.style.display = 'none';
+    }
+    msg.style.display = 'none';
+  }
+
+  function showMsg(text, type) {
+    msg.textContent = text;
+    msg.className = `msg ${type}`;
+    msg.style.display = 'block';
+  }
+
+  processBtn.addEventListener('click', async () => {
+    if (!selectedFiles.length) return;
+    processBtn.disabled = true;
+    processBtn.textContent = 'Traitement en cours…';
+    progressWrap.style.display = 'block';
+    msg.style.display = 'none';
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress = Math.min(progress + 7, 82);
+      progressFill.style.width = progress + '%';
+    }, 180);
+
+    try {
+      const formData = new FormData();
+      selectedFiles.forEach(f => formData.append('images', f));
+      const res = await fetch('/process', { method: 'POST', body: formData });
+
+      clearInterval(interval);
+      progressFill.style.width = '100%';
+      progressLabel.textContent = 'Finalisation…';
+
+      if (!res.ok) throw new Error();
+
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url;
+      a.download = selectedFiles.length === 1
+        ? selectedFiles[0].name.replace(/\.[^.]+$/, '') + '_ok.jpg'
+        : 'photos_vinted.zip';
+      a.click();
+      URL.revokeObjectURL(url);
+
+      showMsg(`✓ ${selectedFiles.length} image${selectedFiles.length > 1 ? 's' : ''} prête${selectedFiles.length > 1 ? 's' : ''} à publier sur Vinted !`, 'success');
+
+    } catch {
+      clearInterval(interval);
+      showMsg('Une erreur est survenue. Réessaie.', 'error');
+    } finally {
+      setTimeout(() => {
+        progressWrap.style.display = 'none';
+        progressFill.style.width = '0%';
+        progressLabel.textContent = 'Traitement en cours…';
+      }, 1200);
+      processBtn.disabled = false;
+      processBtn.textContent = `Traiter ${selectedFiles.length} image${selectedFiles.length > 1 ? 's' : ''} →`;
+    }
+  });
+</script>
+</body>
+</html>
