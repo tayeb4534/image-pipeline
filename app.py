@@ -1,4 +1,4 @@
-from flask import Flask, request, send_file, send_from_directory, jsonify
+from flask import Flask, request, send_file, send_from_directory, jsonify, session, redirect, url_for
 from flask_cors import CORS
 import numpy as np
 import cv2
@@ -12,6 +12,138 @@ from datetime import datetime, timedelta
 
 app = Flask(__name__)
 CORS(app)
+app.secret_key = 'lumio_secret_key_x9z2'
+
+PASSWORD = 'TYB75TEST'
+
+# ─── Auth ─────────────────────────────────────────────────────────────────────
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = ''
+    if request.method == 'POST':
+        pwd = request.form.get('password', '')
+        if pwd == PASSWORD:
+            session['auth'] = True
+            return redirect('/')
+        else:
+            error = 'Mot de passe incorrect.'
+    return f'''<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumio · Accès</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * {{ margin:0; padding:0; box-sizing:border-box; }}
+  body {{
+    background: #f4fafa;
+    font-family: 'Nunito', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }}
+  .card {{
+    background: white;
+    border-radius: 20px;
+    padding: 40px 32px;
+    width: 100%;
+    max-width: 360px;
+    border: 1px solid #d0e8e6;
+    box-shadow: 0 4px 24px rgba(29,122,114,0.08);
+    text-align: center;
+  }}
+  .logo {{
+    font-size: 26px;
+    font-weight: 900;
+    color: #1d7a72;
+    margin-bottom: 6px;
+  }}
+  .logo span {{
+    background: #1d7a72;
+    color: white;
+    border-radius: 8px;
+    padding: 2px 9px;
+    margin-right: 4px;
+  }}
+  .subtitle {{
+    font-size: 12px;
+    color: #5a7a78;
+    font-weight: 600;
+    margin-bottom: 32px;
+  }}
+  input {{
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #d0e8e6;
+    border-radius: 12px;
+    font-size: 15px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    color: #1a2e2d;
+    outline: none;
+    transition: border-color 0.2s;
+    text-align: center;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }}
+  input:focus {{ border-color: #1d7a72; }}
+  button {{
+    width: 100%;
+    padding: 16px;
+    background: #1d7a72;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+    font-family: 'Nunito', sans-serif;
+    transition: background 0.2s;
+  }}
+  button:hover {{ background: #2a9d8f; }}
+  .error {{
+    font-size: 12px;
+    color: #e05a3a;
+    font-weight: 700;
+    margin-bottom: 12px;
+    background: #fff0ee;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ffd0c4;
+  }}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo"><span>L</span>Lumio</div>
+    <div class="subtitle">Accès privé</div>
+    <form method="POST">
+      <input type="password" name="password" placeholder="Mot de passe" autofocus>
+      {"<div class='error'>" + error + "</div>" if error else ""}
+      <button type="submit">Accéder →</button>
+    </form>
+  </div>
+</body>
+</html>'''
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/login')
+
+def auth_required(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get('auth'):
+            return redirect('/login')
+        return f(*args, **kwargs)
+    return decorated
 
 # ─── Pipeline functions ───────────────────────────────────────────────────────
 
@@ -67,7 +199,6 @@ def generate_iphone_exif():
         second=random.randint(0, 59)
     )
     date_str = photo_date.strftime('%Y:%m:%d %H:%M:%S').encode()
-
     iso     = random.choice([32, 40, 50, 64, 80, 100, 125, 160, 200])
     shutter = random.choice([(1,60),(1,80),(1,100),(1,120),(1,160),(1,200)])
     lat = 48.8566 + random.uniform(-0.05, 0.05)
@@ -79,10 +210,13 @@ def generate_iphone_exif():
         s = int(((deg - d) * 60 - m) * 60 * 100)
         return [(d,1),(m,1),(s,100)]
 
+    models = [b'iPhone 13 Pro', b'iPhone 14 Pro', b'iPhone 15 Pro']
+    model  = random.choice(models)
+
     exif_dict = {
         '0th': {
             piexif.ImageIFD.Make:           b'Apple',
-            piexif.ImageIFD.Model:          b'iPhone 15 Pro',
+            piexif.ImageIFD.Model:          model,
             piexif.ImageIFD.Software:       b'17.4.1',
             piexif.ImageIFD.DateTime:       date_str,
             piexif.ImageIFD.XResolution:    (72, 1),
@@ -122,16 +256,13 @@ def process_image_bytes(file_bytes):
     img   = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     if img is None:
         return None
-
     img_rgb       = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img_processed = lift_black_point(img_rgb)
     img_processed = add_poisson_noise(img_processed)
     img_processed = apply_micro_geometry(img_processed)
     img_bgr       = cv2.cvtColor(img_processed, cv2.COLOR_RGB2BGR)
-
     jpeg_buffer, quality = smartphone_jpeg_compression(img_bgr)
     exif_bytes = generate_iphone_exif()
-
     pil_img = Image.open(io.BytesIO(jpeg_buffer.tobytes()))
     out_buf = io.BytesIO()
     pil_img.save(out_buf, format='JPEG', quality=quality, exif=exif_bytes)
@@ -141,29 +272,26 @@ def process_image_bytes(file_bytes):
 # ─── Routes ──────────────────────────────────────────────────────────────────
 
 @app.route('/')
+@auth_required
 def index():
     return send_from_directory('static', 'index.html')
 
 @app.route('/process', methods=['POST'])
+@auth_required
 def process():
     files = request.files.getlist('images')
     if not files:
         return jsonify({'error': 'Aucune image reçue'}), 400
 
     if len(files) == 1:
-        f           = files[0]
-        result      = process_image_bytes(f.read())
+        f      = files[0]
+        result = process_image_bytes(f.read())
         if result is None:
             return jsonify({'error': 'Impossible de traiter cette image'}), 400
-        base_name   = os.path.splitext(f.filename)[0]
-        return send_file(
-            result,
-            mimetype='image/jpeg',
-            as_attachment=True,
-            download_name=f'{base_name}_processed.jpg'
-        )
+        base_name = os.path.splitext(f.filename)[0]
+        return send_file(result, mimetype='image/jpeg', as_attachment=True,
+                         download_name=f'{base_name}_processed.jpg')
 
-    # Multiple files → ZIP
     zip_buf = io.BytesIO()
     with zipfile.ZipFile(zip_buf, 'w', zipfile.ZIP_DEFLATED) as zf:
         for f in files:
@@ -173,12 +301,8 @@ def process():
                 zf.writestr(f'{base_name}_processed.jpg', result.read())
 
     zip_buf.seek(0)
-    return send_file(
-        zip_buf,
-        mimetype='application/zip',
-        as_attachment=True,
-        download_name='images_traitees.zip'
-    )
+    return send_file(zip_buf, mimetype='application/zip', as_attachment=True,
+                     download_name='photos_vinted.zip')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
