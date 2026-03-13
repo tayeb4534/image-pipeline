@@ -1,4 +1,4 @@
-from flask import Flask, request, send_file, jsonify
+from flask import Flask, request, send_file, send_from_directory, jsonify
 from flask_cors import CORS
 import numpy as np
 import cv2
@@ -142,7 +142,7 @@ def process_image_bytes(file_bytes):
 
 @app.route('/')
 def index():
-    return app.send_static_file('index.html')
+    return send_from_directory('static', 'index.html')
 
 @app.route('/process', methods=['POST'])
 def process():
