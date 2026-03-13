@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Image Pipeline</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;700;800&display=swap');
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --border: #1e1e1e;
+    --accent: #c8ff00;
+    --text: #f0f0f0;
+    --muted: #555;
+    --success: #00ff88;
+    --error: #ff4444;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 60px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Header ── */
+  .header {
+    width: 100%;
+    max-width: 480px;
+    margin-bottom: 48px;
+    text-align: left;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 8vw, 48px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: var(--text);
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  .subtitle {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Upload Zone ── */
+  .upload-zone {
+    width: 100%;
+    max-width: 480px;
+    border: 1.5px dashed var(--border);
+    border-radius: 16px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--surface);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .upload-zone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(200,255,0,0.04) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .upload-zone:hover,
+  .upload-zone.dragover {
+    border-color: var(--accent);
+    background: #131313;
+  }
+
+  .upload-zone:hover::before,
+  .upload-zone.dragover::before {
+    background: radial-gradient(ellipse at 50% 0%, rgba(200,255,0,0.08) 0%, transparent 70%);
+  }
+
+  .upload-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 16px;
+    opacity: 0.3;
+  }
+
+  .upload-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .upload-sub {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  input[type="file"] {
+    display: none;
+  }
+
+  /* ── File List ── */
+  .file-list {
+    width: 100%;
+    max-width: 480px;
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .file-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    animation: slideIn 0.2s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .file-name {
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 280px;
+  }
+
+  .file-size {
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  /* ── Button ── */
+  .btn {
+    width: 100%;
+    max-width: 480px;
+    margin-top: 20px;
+    padding: 18px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .btn:hover { background: #d4ff1a; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled {
+    background: var(--border);
+    color: var(--muted);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* ── Progress ── */
+  .progress-wrap {
+    width: 100%;
+    max-width: 480px;
+    margin-top: 20px;
+    display: none;
+  }
+
+  .progress-bar {
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.3s ease;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0%   { opacity: 1; }
+    50%  { opacity: 0.6; }
+    100% { opacity: 1; }
+  }
+
+  .progress-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 10px;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Status ── */
+  .status {
+    width: 100%;
+    max-width: 480px;
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 10px;
+    font-size: 12px;
+    display: none;
+    line-height: 1.6;
+  }
+
+  .status.success {
+    background: rgba(0,255,136,0.06);
+    border: 1px solid rgba(0,255,136,0.2);
+    color: var(--success);
+    display: block;
+  }
+
+  .status.error {
+    background: rgba(255,68,68,0.06);
+    border: 1px solid rgba(255,68,68,0.2);
+    color: var(--error);
+    display: block;
+  }
+
+  /* ── Stats ── */
+  .stats {
+    width: 100%;
+    max-width: 480px;
+    margin-top: 32px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ── Pipeline Info ── */
+  .pipeline-info {
+    width: 100%;
+    max-width: 480px;
+    margin-top: 40px;
+    border-top: 1px solid var(--border);
+    padding-top: 32px;
+  }
+
+  .pipeline-title {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .pipeline-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .pipeline-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .step-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+
+  .step-dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Pipeline actif</div>
+  <h1>Image<br><span>Processor</span></h1>
+  <p class="subtitle">
+    Traitement automatique · EXIF iPhone · Bruit CMOS · GPS Paris
+  </p>
+</div>
+
+<!-- Upload Zone -->
+<div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+  <svg class="upload-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M24 32V16M24 16L18 22M24 16L30 22" stroke="#f0f0f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M8 36C8 36 8 40 12 40H36C40 40 40 36 40 36" stroke="#f0f0f0" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+  <div class="upload-label">Dépose tes images ici</div>
+  <div class="upload-sub">PNG · JPEG · Illimité</div>
+  <input type="file" id="fileInput" multiple accept="image/png,image/jpeg,image/jpg">
+</div>
+
+<!-- File List -->
+<div class="file-list" id="fileList"></div>
+
+<!-- Button -->
+<button class="btn" id="processBtn" disabled onclick="processImages()">
+  <span id="btnText">Sélectionne des images</span>
+</button>
+
+<!-- Progress -->
+<div class="progress-wrap" id="progressWrap">
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+  <div class="progress-label" id="progressLabel">Traitement en cours...</div>
+</div>
+
+<!-- Status -->
+<div class="status" id="status"></div>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-value" id="statCount">0</div>
+    <div class="stat-label">Images</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">~15%</div>
+    <div class="stat-label">Risque détection</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">5</div>
+    <div class="stat-label">Traitements</div>
+  </div>
+</div>
+
+<!-- Pipeline Info -->
+<div class="pipeline-info">
+  <div class="pipeline-title">Ce que le pipeline applique</div>
+  <div class="pipeline-steps">
+    <div class="pipeline-step">
+      <div class="step-dot active"></div>
+      Black point lift — supprime le noir absolu
+    </div>
+    <div class="pipeline-step">
+      <div class="step-dot active"></div>
+      Bruit Poisson CMOS — signature capteur réelle
+    </div>
+    <div class="pipeline-step">
+      <div class="step-dot active"></div>
+      Micro-rotation — casse le hash perceptuel
+    </div>
+    <div class="pipeline-step">
+      <div class="step-dot active"></div>
+      Double compression JPEG — pipeline ISP iPhone
+    </div>
+    <div class="pipeline-step">
+      <div class="step-dot active"></div>
+      EXIF iPhone 15 Pro + GPS Paris injectés
+    </div>
+  </div>
+</div>
+
+<script>
+  const uploadZone  = document.getElementById('uploadZone');
+  const fileInput   = document.getElementById('fileInput');
+  const fileList    = document.getElementById('fileList');
+  const processBtn  = document.getElementById('processBtn');
+  const btnText     = document.getElementById('btnText');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressFill = document.getElementById('progressFill');
+  const progressLabel = document.getElementById('progressLabel');
+  const statusEl    = document.getElementById('status');
+  const statCount   = document.getElementById('statCount');
+
+  let selectedFiles = [];
+
+  // Drag & Drop
+  uploadZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    uploadZone.classList.add('dragover');
+  });
+  uploadZone.addEventListener('dragleave', () => {
+    uploadZone.classList.remove('dragover');
+  });
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    const files = Array.from(e.dataTransfer.files)
+      .filter(f => f.type.startsWith('image/'));
+    addFiles(files);
+  });
+
+  fileInput.addEventListener('change', () => {
+    addFiles(Array.from(fileInput.files));
+    fileInput.value = '';
+  });
+
+  function addFiles(files) {
+    selectedFiles = [...selectedFiles, ...files];
+    renderFileList();
+  }
+
+  function renderFileList() {
+    fileList.innerHTML = '';
+    selectedFiles.forEach((f, i) => {
+      const size = f.size > 1024*1024
+        ? (f.size/1024/1024).toFixed(1) + ' MB'
+        : (f.size/1024).toFixed(0) + ' KB';
+      const div = document.createElement('div');
+      div.className = 'file-item';
+      div.innerHTML = `
+        <span class="file-name">${f.name}</span>
+        <span class="file-size">${size}</span>
+      `;
+      fileList.appendChild(div);
+    });
+
+    statCount.textContent = selectedFiles.length;
+
+    if (selectedFiles.length > 0) {
+      processBtn.disabled = false;
+      btnText.textContent = `Traiter ${selectedFiles.length} image${selectedFiles.length > 1 ? 's' : ''}`;
+    } else {
+      processBtn.disabled = true;
+      btnText.textContent = 'Sélectionne des images';
+    }
+
+    statusEl.className = 'status';
+  }
+
+  async function processImages() {
+    if (selectedFiles.length === 0) return;
+
+    // UI — loading state
+    processBtn.disabled = true;
+    btnText.textContent = 'Traitement...';
+    progressWrap.style.display = 'block';
+    progressFill.style.width = '0%';
+    statusEl.className = 'status';
+
+    // Animate progress bar
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress = Math.min(progress + Math.random() * 8, 85);
+      progressFill.style.width = progress + '%';
+      progressLabel.textContent = `Traitement en cours... ${Math.round(progress)}%`;
+    }, 200);
+
+    try {
+      const formData = new FormData();
+      selectedFiles.forEach(f => formData.append('images', f));
+
+      const response = await fetch('/process', {
+        method: 'POST',
+        body: formData
+      });
+
+      clearInterval(interval);
+      progressFill.style.width = '100%';
+      progressLabel.textContent = 'Terminé ✓';
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Erreur serveur');
+      }
+
+      // Download
+      const blob = await response.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      const isZip = selectedFiles.length > 1;
+      a.href     = url;
+      a.download = isZip ? 'images_traitees.zip' : selectedFiles[0].name.replace(/\.[^.]+$/, '_processed.jpg');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      statusEl.textContent = `✓ ${selectedFiles.length} image${selectedFiles.length > 1 ? 's' : ''} traitée${selectedFiles.length > 1 ? 's' : ''} — téléchargement lancé`;
+      statusEl.className = 'status success';
+
+      // Reset
+      selectedFiles = [];
+      renderFileList();
+
+    } catch (err) {
+      clearInterval(interval);
+      statusEl.textContent = `✗ Erreur : ${err.message}`;
+      statusEl.className = 'status error';
+    } finally {
+      processBtn.disabled = false;
+      btnText.textContent = 'Sélectionne des images';
+      setTimeout(() => {
+        progressWrap.style.display = 'none';
+        progressFill.style.width = '0%';
+      }, 2000);
+    }
+  }
+</script>
+</body>
+</html>
